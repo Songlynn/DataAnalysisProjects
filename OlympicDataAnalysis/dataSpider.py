@@ -1,38 +1,9 @@
+from athleteClass import Athlete
+
 from bs4 import BeautifulSoup
 import requests
+import pandas as pd
 
-class Athlete:
-    def __init__(self, info):
-        self.name, self.name2 = self.get_name_from_info(info)
-        lis = info.find_all('li')
-        self.sex = self.get_item_info(lis, "性别")
-        self.country = self.get_item_info(lis, "国家")
-        self.birth = self.get_item_info(lis, "出生日期")
-        self.height = self.get_item_info(lis, "身高")
-        self.weight = self.get_item_info(lis, "体重")
-        self.event = self.get_item_info(lis, "项目")
-        self.native = self.get_item_info(lis, "籍贯")
-        self.register = self.get_item_info(lis, "注册单位")
-
-    # 获取运动员的中文名和英文名
-    @staticmethod
-    def get_name_from_info(info):
-        name_soup = info.h1.contents
-        name = name_soup[0]
-        name2 = name_soup[1].string
-        return name, name2
-
-    # 获取运动员对应的信息，根据不同内容获取，有部分运动员的某类别信息无，则返回None
-    @staticmethod
-    def get_item_info(lis, typename):
-        for li in lis:
-            for child in li.descendants:
-                if "".join(child).find(typename) >= 0:
-                    return li.contents[1] if len(li.contents) >= 2 else None    # 部分运动员的某类信息未显示，需要甄别
-        return None
-
-    def print_item(self):
-        print(self.name, self.name2, self.sex, self.country, self.birth, self.height, self.weight, self.event, self.native, self.register)
 
 class DataSpider:
     baseUrl = 'http://info.2016.163.com'
@@ -78,7 +49,17 @@ class DataSpider:
             self.get_each_alphabet(url)
         print(len(self.athletes))
 
+    def save_athletes(self):
+        data = [item.obj_to_list() for item in self.athletes]
+        df = pd.DataFrame(data, columns=['name', 'name2', 'sex', 'country', 'birth', 'height(cm)', 'weight(kg)', 'event',
+                                         'native', 'register'])
+        df.to_csv('athletes.csv', encoding='utf_8_sig', index=False)        # 设置编码方式为utf_8_sig，防止中文乱码
+
 data = DataSpider()
 data.get_alphabet_urls()
 data.get_athletes()
+data.save_athletes()
+
+# 数据爬取后，做了一定的操作，但有部分数据在网页上不规范且其量很小，所以可以手动进行修正
+# 如项目字段
 
